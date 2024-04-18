@@ -11,8 +11,8 @@ class Document(Base):
     title = Column(String, index=True)
     description = Column(String, index=True)
     owner_id = Column(String, ForeignKey("users.id"))
-    url = Column(String)
     owner = relationship("User", back_populates="documents")
+    url = Column(String)
 
     @classmethod
     async def create(cls, db, **kwargs):

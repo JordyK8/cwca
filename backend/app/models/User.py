@@ -19,6 +19,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
 
     documents = relationship("Document", back_populates="owner", lazy="selectin")
+    channels = relationship("Channel", back_populates="owner", lazy="selectin")
 
 
     @classmethod

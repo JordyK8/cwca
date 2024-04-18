@@ -38,7 +38,7 @@ async def home(request: Request):
         return HTMLResponse(html)
     return HTMLResponse('<a href="/login">login</a>')
 
-@router.get("/test")
+@router.get("/sync")
 def test_api_request(request: Request):
     print('request.session', request.session) 
     if 'credentials' not in request.session:
