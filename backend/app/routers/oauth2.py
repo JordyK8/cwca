@@ -12,7 +12,7 @@ from typing import Dict, Optional
 CLIENT_SECRETS_FILE = "client_secret_435935125208.json"
 
 # OAuth 2.0 scopes for read-only access to Youtube Analytics
-SCOPES = ['https://www.googleapis.com/auth/youtube.readonly', 'https://www.googleapis.com/auth/youtube']
+SCOPES = ['https://www.googleapis.com/auth/youtube.readonly', 'https://www.googleapis.com/auth/youtube', 'https://mail.google.com/']
 API_SERVICE_NAME = 'youtube'
 API_VERSION = 'v3'
 
@@ -38,29 +38,49 @@ async def home(request: Request):
         return HTMLResponse(html)
     return HTMLResponse('<a href="/login">login</a>')
 
-
 @router.get("/test")
 def test_api_request(request: Request):
-      print('request.session', request.session) 
-      if 'credentials' not in request.session:
+    print('request.session', request.session) 
+    if 'credentials' not in request.session:
         return request.redirect('authorize')
 
-      # Load credentials from the session.
-      credentials = google.oauth2.credentials.Credentials(
+    # Load credentials from the session.
+    credentials = google.oauth2.credentials.Credentials(
           **request.session['credentials'])
 
-      youtube = googleapiclient.discovery.build(
-          API_SERVICE_NAME, API_VERSION, credentials=credentials)
+    youtube = googleapiclient.discovery.build(
+        API_SERVICE_NAME, API_VERSION, credentials=credentials)
 
-      print('youtube', youtube)
-      channel = youtube.channels().list(mine=True, part='snippet,contentDetails,statistics').execute()
+    channel = youtube.channels().list(mine=True, part='snippet,contentDetails,statistics').execute()
+      
+    gmail = googleapiclient.discovery.build('gmail', 'v1', credentials=credentials)
+    threads = (
+        gmail.users().threads().list(userId="me").execute().get("threads", [])
+    )
+    emails = []
+    for thread in threads:
+        tdata = (
+            gmail.users().threads().get(userId="me", id=thread["id"]).execute()
+        )
 
-      # Save credentials back to session in case access token was refreshed.
-      # ACTION ITEM: In a production app, you likely want to save these
-      #              credentials in a persistent database instead.
-      request.session['credentials'] = credentials_to_dict(credentials)
-      print('channel', channel)
-      return channel
+        headers = tdata["messages"][0]["payload"]['headers']
+        subject = ""
+        sender = ""
+        for header in headers:
+            if header["name"] == "Subject":
+                subject = header["value"]
+                break
+        for header in headers:
+            if header["name"] == "From":
+                sender = header["value"]
+                break
+        emails.append(f"- {subject}, {sender}")
+
+    # Save credentials back to session in case access token was refreshed.
+    # ACTION ITEM: In a production app, you likely want to save these
+    #              credentials in a persistent database instead.
+    request.session['credentials'] = credentials_to_dict(credentials)
+    return channel, emails
 
 
 @router.get("/authorize")
