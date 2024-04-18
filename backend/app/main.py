@@ -3,8 +3,8 @@ from datetime import datetime
 from fastapi import Depends, FastAPI, Request
 
 from app.dependencies import get_query_token
-
-from app.routers import user
+from starlette.middleware.sessions import SessionMiddleware
+from app.routers import user, oauth2
 import logging
 import sys
 from contextlib import asynccontextmanager
@@ -14,6 +14,7 @@ from app.utils.database import sessionmanager
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG if settings.debug_logs else logging.INFO)
 
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 lifespan = None
 init_db = True
@@ -39,8 +40,10 @@ async def request_timing_middleware(request: Request, call_next: Request):
     return response
 
 app.middleware("http")(request_timing_middleware)  # Apply to all HTTP requests
+app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
 
 app.include_router(user.router)
+app.include_router(oauth2.router)
 
 @app.get("/")
 async def root():

@@ -10,7 +10,7 @@ class GoogleAPI:
         self.flow =  google_auth_oauthlib.flow.Flow.from_client_secrets_file(
             'client_secret.json',
             scopes=['https://www.googleapis.com/auth/youtube'])
-        self.flow.redirect_uri = 'https://localhost:8000/users/oauth2callback'
+        self.flow.redirect_uri = 'http://localhost:8000/oauth2/oauth2callback'
 
         def authorization_request_url():
             authorization_url, state = self.flow.authorization_url(
